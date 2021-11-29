@@ -4,3 +4,6 @@ test.in
 .fake
 .pls_cache/
 .metals/
+node_modules/
+*.json
+a.out

@@ -1,7 +1,7 @@
-console.log("test");
+console.log("Hello from Javascript!");
 
-let add = (a, b) => {
+let doAdd = (a, b) => {
     return a + b;
 };
 
-console.log(`a + b = ${add(1, 2)}`)
+console.log(`a + b = ${doAdd(1, 2)}`);

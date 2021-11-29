@@ -1,3 +1,6 @@
+// Install dotnet-sdk and dotnet-runtime
+// Run with dotnet fsi Hello.fsx
+
 // F# time yay
 printfn "Hello from F#!"
 

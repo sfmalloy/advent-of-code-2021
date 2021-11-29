@@ -19,3 +19,6 @@ Bash
 Scala
 Haskell
 Swift
+R
+TypeScript
+

@@ -6,5 +6,5 @@ sub doAdd {
     return $_[0] + $_[1];
 }
 
-print("Hello, world!\n");
+print("Hello from Perl!\n");
 printf("a + b = %d\n", doAdd(1, 2));

@@ -1,3 +1,7 @@
+// Install go compiler
+// Compile with go build Hello.go
+// Run ./Hello
+
 package main
 
 import "fmt"
