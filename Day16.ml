@@ -87,15 +87,6 @@ let version_sum bits =
 (****************************************************************************)
 (* Part 2 *)
 
-(* type expr = 
-  | Expression of {
-      packet : op; 
-      length : int; 
-      length_type : int; 
-      expression : expr
-    }
-  | Literal of {value : int} *)
-
 type op =
   | Sum
   | Product
@@ -114,18 +105,22 @@ type token =
       op_type : op;
       length_type : len_type;
       length : int;
+      address : int
   }
-  | Literal of {
-      value : int;
-  }
+  | Literal of { value : int; address : int }
+
+type expr =
+  | Add of { expression : expr list }
+  | Multiply of { expression : expr list }
+  | Min of { expression : expr list }
+  | Max of { expression : expr list }
+  | Greater of { expression : expr list }
+  | Less of { expression : expr list }
+  | Equal of { expression : expr list }
+  | Number of { value : int; address : int }
 
 exception LexError of string
-
-let num_to_len_type id = 
-  match id with
-  | 0 -> BitLength
-  | 1 -> SubPacketCount
-  | _ -> raise (LexError "Invalid length")
+exception ParseError of string
 
 let num_to_op type_id =
   match type_id with
@@ -147,70 +142,84 @@ let literal bits =
   let num = combine bits in
   decode num (List.length num);;
 
-(* let parse_bits program length =
-  let rec helper bits ip = 
-    if ip < length then  *)
-
-let parse program =
-  let rec helper bits =
+let lex program =
+  let rec helper bits ip =
     if (max_bit bits) == 1 then
       let no_version = chop_n bits 3 in
       let type_id = decode no_version 3 in
       let params = chop_n no_version 3 in
       if type_id == 4 then
         let trimmed = eat_numbers params in
-        Literal {value = literal params} :: helper trimmed
+        Literal {value = literal params; address = ip} :: helper trimmed (ip + 6 + (List.length params - List.length trimmed))
       else
         let length_id = List.hd params in
         if length_id == 1 then
-          Operation {op_type = num_to_op type_id; length_type = num_to_len_type (decode params 1); 
-            length = decode (List.tl params) 11} :: helper (chop_n params 12)
+          Operation {op_type = num_to_op type_id; length_type = SubPacketCount;
+            length = decode (List.tl params) 11; address = ip} :: helper (chop_n params 12) (ip + 6 + 12)
         else
-          Operation {op_type = num_to_op type_id; length_type = num_to_len_type (decode params 1); 
-            length = decode (List.tl params) 15} :: helper (chop_n params 16)
+          Operation {op_type = num_to_op type_id; length_type = BitLength; 
+            length = decode (List.tl params) 15; address = ip} :: helper (chop_n params 16) (ip + 6 + 16)
     else
       [] in
-  helper program;;
+  helper program 0;;
 
-(* let version_sum bits =
-  let rec helper bits sum =
-    if (max_bit bits) == 1 then
-      let version = decode bits 3 in
-      let bits_no_version = chop_n bits 3 in
-      let type_id = decode bits_no_version 3 in
-      let param_bits = chop_n bits_no_version 3 in
-      if type_id == 4 then
-        helper (eat_numbers param_bits) (sum + version)
-      else
-        let length_type_id = List.hd param_bits in
-        if length_type_id == 1 then
-          helper (chop_n param_bits 12) (sum + version)
-        else
-          helper (chop_n param_bits 16) (sum + version)
-    else
-      sum in
-  helper bits 0;; *)
+let rec trim_n prog last =
+  match prog with
+  | [] -> []
+  | h::t -> 
+    match h with
+    | Operation op -> if op.address == last then t else trim_n t last
+    | Literal l -> if l.address == last then t else trim_n t last;;
 
+let rec trim_b prog end_addr =
+  match prog with
+  | [] -> []
+  | h::t ->
+    match h with
+    | Operation op -> if op.address == end_addr then t else trim_b t end_addr
+    | Literal l -> if l.address == end_addr then t else trim_b t end_addr;;
 
-(* let rec lex bits =
-  if (max_bit bits) == 1 then
-    let expr = chop_n bits 3 in
-    let type_id = decode expr 3 in
-    let params = chop_n expr 3 in
-    let length_type_id = List.hd params in
-    let chop_len = if length_type_id == 1 then 11 else 15 in
-    let new_len = decode (List.tl params) chop_len in
-    match type_id with
-    | 0 -> Expression {packet = Sum; length = new_len; length_type = length_type_id; expression = lex (chop_n params (chop_len+1))}
-    | 1 -> Expression {packet = Product; length = new_len; length_type = length_type_id; expression = lex (chop_n params (chop_len+1))}
-    | 2 -> Expression {packet = Minimum; length = new_len; length_type = length_type_id; expression = lex (chop_n params (chop_len+1))}
-    | 3 -> Expression {packet = Maximum; length = new_len; length_type = length_type_id; expression = lex (chop_n params (chop_len+1))}
-    | 5 -> Expression {packet = GreaterThan; length = new_len; length_type = length_type_id; expression = lex (chop_n params (chop_len+1))}
-    | 6 -> Expression {packet = LessThan; length = new_len; length_type = length_type_id; expression = lex (chop_n params (chop_len+1))}
-    | 7 -> Expression {packet = EqualTo; length = new_len; length_type = length_type_id; expression = lex (chop_n params (chop_len+1))}
-    | _ -> Literal {value = literal params}
+let rec parse prog = 
+  match prog with
+  | [] -> []
+  | h::t ->
+    match h with
+    | Literal l -> Number { value = l.value; address = l.address } :: parse t
+    | Operation op -> 
+      if op.length_type == BitLength then
+        let expression_list = parse_b t (op.address + op.length) in
+        let trimmed = trim_b t (op.address + op.length) in
+        match op.op_type with
+        | Sum -> Add { expression = expression_list } :: parse trimmed
+        | Product -> Multiply { expression = expression_list } :: parse trimmed
+        | Minimum -> Min { expression = expression_list } :: parse trimmed
+        | Maximum -> Max { expression = expression_list } :: parse trimmed
+        | GreaterThan -> Greater { expression = expression_list } :: parse trimmed
+        | LessThan -> Less { expression = expression_list } :: parse trimmed
+        | EqualTo -> Equal { expression = expression_list } :: parse trimmed
+      else []
+        (* let expression_list = parse_n t op.length in
+        let trimmed = trim_n expression_list in
+        match op.op_type with
+        | Sum -> Add { expression = expression_list } :: parse trimmed
+        | Product -> Multiply { expression = expression_list } :: parse trimmed
+        | Minimum -> Min { expression = expression_list } :: parse trimmed
+        | Maximum -> Max { expression = expression_list } :: parse trimmed
+        | GreaterThan -> Greater { expression = expression_list } :: parse trimmed
+        | LessThan -> Less { expression = expression_list } :: parse trimmed
+        | EqualTo -> Equal { expression = expression_list } :: parse trimmed
+and parse_n prog length =
+  if length == 0 then
+    []
   else
-    Literal {value = 0};; *)
+    parse (List.hd prog) :: parse_n (List.tl prog) (length - 1) *)
+and parse_b prog last = 
+  match prog with
+  | [] -> []
+  | h::t ->
+    match h with
+    | Operation op -> if op.address == last then parse (h :: []) else parse h :: parse_b t last
+    | Literal l -> if l.address == last then parse;;
 
 let () =
   let bits = get_input "inputs/test.in" in

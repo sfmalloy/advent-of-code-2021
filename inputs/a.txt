@@ -1,0 +1,14 @@
+110         -> version
+000         -> type id 0 : sum
+1           -> len  id 1 : packet count
+00000000010 -> length    : 2 packets
+
+Address 18:
+110         -> version
+100         -> type id 4 : literal
+00001       -> last num  : 1
+
+Address 18+11:
+010         -> version
+100         -> type id 4 : literal
+00010       -> last num  : 2
