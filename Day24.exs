@@ -1,8 +1,3 @@
-{:ok, ipt} = File.read("inputs/Day24.in")
-# {:ok, ipt} = File.read("inputs/test.in")
-
-elems = String.split(ipt, "\n")
-
 # registers defined as [w, x, y, z]
 defmodule Computer do
   def run(program, ipt) do
@@ -10,7 +5,6 @@ defmodule Computer do
   end
 
   defp run([""], reg, _) do
-    IO.puts "done"
     reg
   end
 
@@ -74,5 +68,95 @@ defmodule Computer do
   end
 end
 
-[w, x, y, z] = Computer.run(elems, [9, 9, 5, 9, 9])
-IO.puts("#{w} #{x} #{y} #{z}")
+
+{:ok, ipt} = File.read("inputs/Day24.in")
+prog = String.split(ipt, "\n")
+#                              0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10
+IO.inspect(Computer.run(prog, [1, 1, 1, 4, 1, 1, 9, 8, 1, 1, 1, 3, 1, 1]))
+# ,  1,  9,  7,  9
+
+# subprogs =
+#   ipt
+#   |> String.split("inp w\n")
+#   |> tl()
+#   |> Enum.map(
+#     fn prog ->
+#       subprog = String.split(prog, "\n")
+#       ["inp w", "inp z" | subprog]
+#     end)
+# IO.inspect(subprogs)
+
+# defmodule Solve do
+#   def run([prog | subprogs], w_inputs \\ [], z_inputs \\ [0], memo \\ %{}) do
+#     for i <- 9..1\\-1 do
+
+#     end
+#     memo
+#   end
+
+#   def run([""], w_inputs, z_inputs, memo) do
+#     # Map.put(memo, {w_inputs, z}, z)
+#     # z
+#   end
+# end
+
+# [w, x, y, z] = Computer.run(prog, [9, 9, 6, 9, 9, 9, 9, 9, 2, 7])
+# defmodule Solve do
+#   def guess(prog, lst, [{upper, lower} | limit_tail], parent) do
+#     for i <- (upper)..(lower)//-1 do
+#       guess(prog, lst ++ [i], limit_tail, parent)
+#     end
+#     nil
+#   end
+
+#   def guess(prog, lst, [], parent) do
+#     [_, _, _, z] = Computer.run(prog, lst)
+#     z
+#   end
+# end
+
+# for i <- 1..9 do
+#   spawn_link(
+#     Solve,
+#     :guess,
+#     [
+#       prog,
+#       [],
+#       [
+#         {1, 1},
+#         {7, 7},
+#         {6, 6},
+#         {9, 9},
+#         {9, 9},
+#         {i, i},
+#         {9, 1},
+#         {9, 1},
+#         {9, 1},
+#         {9, 1},
+#         {9, 1},
+#         {9, 1},
+#         {9, 1},
+#         {9, 1}
+#       ],
+#       parent
+#     ]
+#   )
+# end
+
+# receive do
+#   {:yo, {lst, z}} -> IO.inspect(lst, label: "z=#{z}")
+# end
+
+
+
+
+# IO.puts("#{w} #{x} #{y} #{z}")
+# IO.puts("#{rem(z, 26) - 5}")
+# Solve.guess(prog, [9, 9, 6, 9, 9, 9, 8])
+
+
+# x = %{}
+# x = Map.put(x, {1, 2}, 2)
+# IO.inspect(x)
+
+# l = fn lst -> if length(list) == 5 do IO.puts("done") else l() end end
