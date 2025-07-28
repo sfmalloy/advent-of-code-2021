@@ -1,3 +1,6 @@
+**NOTE:** This repository is now archived. Please use [my solutions monorepo](https://github.com/sfmalloy/advent-of-code) to find any future changes.
+___
+
 # Advent of Code 2021!!
 
 Past couple years I've attempted have been in Python. This year I'm attempting to do all 25 days each in a different language. The `extras` branch has some extra bonus solutions for fun in other langauges (some duplicate langauges).
